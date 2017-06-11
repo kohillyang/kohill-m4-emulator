@@ -24,7 +24,10 @@ inline QString Int2Hex(T d){
 	return QString("0x%1").arg(d,0,16);
 }
 class Object : public QObject{
-
-}
+public:
+	QString toString(){
+		return "Object";
+	}
+};
 
 #endif /* INC_PUBLIC_HEADER_HPP_ */
