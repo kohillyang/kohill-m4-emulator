@@ -25,7 +25,7 @@ inline QString Int2Hex(T d){
 }
 class Object : public QObject{
 public:
-	QString toString(){
+	const QString toString(){
 		return "Object";
 	}
 };

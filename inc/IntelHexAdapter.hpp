@@ -44,18 +44,36 @@ public:
 		r.checksum = line.mid(9 + r.byte_count * 2, 2).toInt(&ok, 16);
 		return r;
 	}
-	void printLines() {
-		QList<QByteArray> lines = getlines();
-		for (auto iter = lines.begin(); iter != lines.end(); iter++) {
-			cout << QString(*iter);
-			cout << parseLine(*iter).toString() << endl;
+	const QString toString() {
+		QString r;
+//		QList<QByteArray> lines = getlines();
+//		for (auto iter = lines.begin(); iter != lines.end(); iter++) {
+//			r += QString(*iter)  +  parseLine(*iter).toString() + "\r\n";
+//		}
+	    auto x  = toBinary();
+	    auto keys = x.keys();
+	    for (auto iter = keys.constBegin(); iter != keys.constEnd(); iter ++ ) {
+	    	r +=  Int2Hex(*iter) + " " + Int2Hex(x[*iter]) + "\n";
+		}
+		return r;
+	}
+	uint32_t readU32(uint32_t address){
+		if(binarymap.contains(address)){
+			return binarymap[address];
+		}
+		else{
+			cerr << QString("try to read 4bytes from %0 which has no data.")
+					.arg(Int2Hex(address)) << endl;
+			return 0xffffffff;
 		}
 	}
 	Intel_HEX_Adapter(QString filename) {
 		this->filename = filename;
+		binarymap = toBinary();
 	}
 	~Intel_HEX_Adapter() {
 	}
+
 	QMap<uint32_t, uint32_t> toBinary() {
 		QMap<uint32_t, uint32_t> r;
 		QList<QByteArray> lines = getlines();
@@ -67,7 +85,7 @@ public:
 			auto pLine = parseLine(*iter);
 			switch (pLine.record_type) {
 			case 0x00:
-				for (int i = 0; i < pLine.byte_count / size_t_width; i++) {
+				for (int i = 0; i < pLine.byte_count / size_t_width * 2; i++) {
 					uint32_t dat = 0;
 					QByteArray da_32_str = pLine.data.mid(i * size_t_width,
 							size_t_width);
@@ -76,7 +94,7 @@ public:
 						uint32_t dat_8 = da_byte_str.toUInt(&ok, 16);
 						dat |= dat_8 << (8 * var);
 					}
-					r[baseAddr + pLine.address + size_t_width / 2 * i] = dat;
+					r[baseAddr + pLine.address + size_t_width/2  * i] = dat;
 				} //Data
 				break;
 			case 0x01:
@@ -103,6 +121,8 @@ public:
 		return r;
 	}
 private:
+	QMap<uint32_t, uint32_t> binarymap;
 	QString filename;
+	Intel_HEX_Adapter(){};
 };
 
