@@ -24,7 +24,8 @@ inline QString Int2Hex(T d){
 	return QString("0x%1").arg(d,0,16);
 }
 #define LOG(x) (clog << __FILE__ << " " << __LINE__ << " " << "FUNCTION" << " " << x << endl)
-#define LogAssert(c,l) if(c) LOG(l)
+#define LogAssert(c,l) if(!(c)) {LOG(l);abort();}
+
 class Object : public QObject{
 public:
 	const QString toString(){
