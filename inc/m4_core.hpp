@@ -27,11 +27,11 @@ public:
 		cpsr = 0;
 	}
 	uint32_t& operator [](uint32_t index) {
-		LogAssert(index < 16, QString("index out of bound.%0").arg(index));
+		AbortAssert(index < 16, QString("index out of bound.%0").arg(index));
 		return r[index];
 	}
 	uint32_t& operator [](int index) {
-		LogAssert(index < 16, QString("index out of bound.%0").arg(index));
+		AbortAssert(index < 16, QString("index out of bound.%0").arg(index));
 		return r[index];
 	}
 	void updateCpsrByResult(uint32_t r) {
@@ -47,12 +47,15 @@ public:
  * 	0 0 0 0 0 imm5 Rm Rd
  */
 uint32_t lsr(CORE_REGS &core_regs, uint16_t instruction) {
-	LogAssert((instruction & (0b11111 << 11)) == 0, "Expect 0b00000.");
+	AbortAssert((instruction & (0b11111 << 11)) == 0, "Expect 0b00000.");
 	uint16_t imm5 = (instruction & (0b11111 << 6)) >> 6;
 	uint32_t rm = (instruction & (0b111 << 3)) >> 3;
 	uint32_t rd = (instruction & (0b111 << 0)) >> 0;
+	WarnAssert(rd != 13 && rd != 15 && rm != 13 && rm != 13,
+			"if d IN {13,15} || m IN {13,15} then UNPREDICTABLE;");
 	uint32_t result = core_regs[rm] << imm5;
 	core_regs[rd] = result;
+
 	core_regs.updateCpsrByResult(result);
 	return result;
 }
