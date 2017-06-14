@@ -41,24 +41,47 @@ public:
 	}
 };
 /*
+ * * lsr(immediate)
  * 	lsl r0,r1,#2 -> 0x0088 -> 0b0 00010 001 000
  * 	                              #2  r1 r0
  * 	It can optionally update the condition flags based on the result.
  * 	0 0 0 0 0 imm5 Rm Rd
+ * 	* lsr(register)
+ * 	Logical Shift Right (register) shifts a register value right by a variable number of bits,
+ * 	shifting in zeros, and writes the result to the destination register.
+ * 	 The variable number of bits is read from the bottom byte of a register.
+ * 	 It can optionally update the condition flags based on the result.
+ *
  */
-uint32_t lsr(CORE_REGS &core_regs, uint16_t instruction) {
-	AbortAssert((instruction & (0b11111 << 11)) == 0, "Expect 0b00000.");
-	uint16_t imm5 = (instruction & (0b11111 << 6)) >> 6;
-	uint32_t rm = (instruction & (0b111 << 3)) >> 3;
-	uint32_t rd = (instruction & (0b111 << 0)) >> 0;
-	WarnAssert(rd != 13 && rd != 15 && rm != 13 && rm != 13,
-			"if d IN {13,15} || m IN {13,15} then UNPREDICTABLE;");
-	uint32_t result = core_regs[rm] << imm5;
-	core_regs[rd] = result;
-
-	core_regs.updateCpsrByResult(result);
-	return result;
+uint32_t getBits(uint32_t d,uint32_t mask,uint32_t startbit){
+	return (d & (mask << startbit )) >> startbit;
 }
+uint32_t lsl(CORE_REGS &core_regs, uint16_t instruction) {
+	if((instruction & (0b11111 << 11)) == 0){
+		uint16_t imm5 = (instruction & (0b11111 << 6)) >> 6;
+		uint32_t rm = (instruction & (0b111 << 3)) >> 3;
+		uint32_t rd = (instruction & (0b111 << 0)) >> 0;
+		uint32_t result = core_regs[rm] << imm5;
+		core_regs[rd] = result;
+		core_regs.updateCpsrByResult(result);
+		return result;
+	}//lsr(immediate)
+	else if(getBits(instruction, 0b1111111111, 6) == 0b0100000010){
+		uint32_t rm = (instruction & (0b111 << 3)) >> 3;
+		uint32_t rd = (instruction & (0b111 << 0)) >> 0;
+		uint32_t n = core_regs[rm] & 0xff;
+		uint32_t result = core_regs[rm] << n;
+		core_regs[rd] = result;
+		core_regs.updateCpsrByResult(result);
+		return result;
+	}
+	else{
+		AbortAssert(1,Int2Hex(instruction));
+		return 0;
+	}
+}
+
+
 class M4_Core: Object {
 public:
 	M4_Core(QString filename) :
@@ -72,7 +95,7 @@ private:
 		//for lsr lsl r0,r1,#2
 		core_regs[0] = 2;
 		core_regs[1] = 3;
-		lsr(core_regs, 0x0088);
+		lsl(core_regs, 0x0088);
 		std::cout << "lsr lsl r0,r1,#2 " << (core_regs[0] == 0x0c ? "pass":"not pass") << std::endl;
 	}
 };
