@@ -15,7 +15,7 @@
 #include <QException>
 using namespace std;
 #define UNUSE(x) ((void)x)
-ostream& operator << (ostream& fin,QString s){
+inline ostream& operator << (ostream& fin,QString s){
 	fin << s.toStdString();
 	return fin;
 }
