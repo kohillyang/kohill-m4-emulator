@@ -47,7 +47,7 @@ uint32_t lsl(CORE_REGS &core_regs, uint16_t instruction) {
 		uint32_t rm = (instruction & (0b111 << 3)) >> 3;
 		uint32_t rd = (instruction & (0b111 << 0)) >> 0;
 		uint32_t n = core_regs[rm] & 0xff;
-		uint32_t fromData = core_regs[rm];
+		uint32_t fromData = core_regs[rd];
 		uint32_t result = fromData << n;
 		core_regs[rd] = result;
 		core_regs.updateCpsrByResult(result);
@@ -61,7 +61,37 @@ uint32_t lsl(CORE_REGS &core_regs, uint16_t instruction) {
 		return 0;
 	}
 }
+uint32_t lsr(CORE_REGS &core_regs, uint16_t instruction) {
 
+	if(LSR_I_CON(instruction)){
+		uint16_t n = BITS(instruction,6,10);//rm max:31
+		uint16_t rm = BITS(instruction,3,5);
+		uint16_t rd = BITS(instruction,0,2);
+		uint32_t fromData = core_regs[rm];
+		uint32_t result = fromData >> n;
+		core_regs[rd] = result;
+		core_regs.updateCpsrByResult(result);
+		((1 << n) & (fromData << 1)) ? core_regs.updateCpsrCarryBit(true) :
+				core_regs.updateCpsrCarryBit(false);
+		//it's OK when the highest bit of fromData is 1.
+		return result;
+	}else if(LSR_R_CON(instruction)){
+		uint16_t rm = BITS(instruction,3,5);
+		uint16_t rd = BITS(instruction,0,2);
+		uint16_t n = core_regs[rm] & 0xff;
+		uint32_t fromData = core_regs[rd];
+		uint32_t result = fromData >> n;
+		core_regs[rd] = result;
+		core_regs.updateCpsrByResult(result);
+		((1 << n) & (fromData << 1)) ? core_regs.updateCpsrCarryBit(true) :
+				core_regs.updateCpsrCarryBit(false);
+		//it's OK when the highest bit of fromData is 1.
+		return result;
+	}else{
+		AbortAssert(1,Int2Hex(instruction));
+		return 0;
+	}
+}
 };
 
 

@@ -53,8 +53,8 @@ public:
 
 #define LSL_I_CON(x) (BITS(x, 11, 15 ) == 0x00)
 #define LSL_R_CON(x) (BITS(x, 6, 15)  ==0x102)
-
-
+#define LSR_I_CON(x) (BITS(instruction,11,15)== 0x01)
+#define LSR_R_CON(x) (BITS(instruction,6,15)== 0x103)
 
 uint32_t lsl(CORE_REGS &core_regs, uint16_t instruction);
 
@@ -79,6 +79,11 @@ private:
 		lsl(core_regs, 0x7c8);//lsl r0,r1,#31
 		cout << "0x7c8 " << core_regs.toString() << endl;
 		//expect r0:0x80000000 r1:0x5 r2:0x0 cpsr:0x80000173
+		core_regs[0] = 2;
+		lsl(core_regs, 0x4088);
+		core_regs[1] = 5;
+		cout << "0x4088 " << core_regs.toString() << endl;
+		//expect r0:0x40   r1:0x5
 	}
 };
 
