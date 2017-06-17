@@ -121,13 +121,14 @@ uint32_t adc(CORE_REGS &core_regs, uint16_t instruction){
 		uint16_t rdn = BITS(instruction,0,2);
 		uint32_t op1 = core_regs[rm];
 		uint32_t op2 = core_regs[rdn];
-		uint64_t result = (uint64_t )op1 + (uint64_t )op2;
+		uint32_t C =core_regs.C()?1:0;
+		uint64_t result = (uint64_t )op1 + (uint64_t )op2 + C;
 		uint32_t result32 = (uint32_t)result;
 		core_regs[rdn] = result32;
 		core_regs.updateCpsrNZByResult(result32);
 		core_regs.updateCpsrCarryBit(result & ((uint64_t)1<<32));
 
-		int64_t signed_result= int64_t((int32_t)op1) + int64_t((int32_t)op2);
+		int64_t signed_result= int64_t((int32_t)op1) + int64_t((int32_t)op2)+ C;
 
 		core_regs.updateCpsrOverflowBit(
 				  (signed_result > (int64_t)(int32_t)(0x7FFFFFFF)) ||

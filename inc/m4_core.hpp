@@ -53,10 +53,10 @@ public:
 		C ? (cpsr |= CPSR_BIT_V) : (cpsr &= ~CPSR_BIT_V);
 	}
 	bool C(){
-		return cpsr &= CPSR_BIT_C;
+		return cpsr & CPSR_BIT_C;
 	}
 	bool V(){
-		return cpsr &= CPSR_BIT_V;
+		return cpsr & CPSR_BIT_V;
 	}
 
 };
