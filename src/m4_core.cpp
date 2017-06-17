@@ -38,7 +38,7 @@ uint32_t lsl(CORE_REGS &core_regs, uint16_t instruction) {
 		uint32_t fromData = core_regs[rm];
 		uint32_t result = fromData << imm5;
 		core_regs[rd] = result;
-		core_regs.updateCpsrByResult(result);
+		core_regs.updateCpsrNZByResult(result);
 		((1 << (32 - imm5)) & fromData) ? core_regs.updateCpsrCarryBit(true) :
 				core_regs.updateCpsrCarryBit(false);
 		return result;
@@ -50,7 +50,7 @@ uint32_t lsl(CORE_REGS &core_regs, uint16_t instruction) {
 		uint32_t fromData = core_regs[rd];
 		uint32_t result = fromData << n;
 		core_regs[rd] = result;
-		core_regs.updateCpsrByResult(result);
+		core_regs.updateCpsrNZByResult(result);
 		((1 << (32 - n)) & fromData) ? core_regs.updateCpsrCarryBit(true) :
 					core_regs.updateCpsrCarryBit(false);
 
@@ -70,7 +70,7 @@ uint32_t lsr(CORE_REGS &core_regs, uint16_t instruction) {
 		uint32_t fromData = core_regs[rm];
 		uint32_t result = fromData >> n;
 		core_regs[rd] = result;
-		core_regs.updateCpsrByResult(result);
+		core_regs.updateCpsrNZByResult(result);
 		((1 << n) & (fromData << 1)) ? core_regs.updateCpsrCarryBit(true) :
 				core_regs.updateCpsrCarryBit(false);
 		//it's OK when the highest bit of fromData is 1.
@@ -82,11 +82,59 @@ uint32_t lsr(CORE_REGS &core_regs, uint16_t instruction) {
 		uint32_t fromData = core_regs[rd];
 		uint32_t result = fromData >> n;
 		core_regs[rd] = result;
-		core_regs.updateCpsrByResult(result);
+		core_regs.updateCpsrNZByResult(result);
 		((1 << n) & (fromData << 1)) ? core_regs.updateCpsrCarryBit(true) :
 				core_regs.updateCpsrCarryBit(false);
 		//it's OK when the highest bit of fromData is 1.
 		return result;
+	}else{
+		AbortAssert(1,Int2Hex(instruction));
+		return 0;
+	}
+}
+
+
+/*
+ * Add with Carry (immediate)
+ * adds an immediate value and the carry flag value to a register value,
+ * and writes the result to the destination register.
+ * It can optionally update the condition flags based on the result.
+ * Note: ARM_Cortex M4 does not support adc(immediate)
+ *
+ * Add with Carry (register) adds a register value,
+ * the carry flag value, and an optionally-shifted register value,
+ * and writes the result to the destination register.
+ * It can optionally update the condition flags based on the result.
+ * Example: adc r3,r1,r3 (r1+r3+carry)->r3
+ * 			adc r1,r1,r3 (r1+r3+carry)->r1
+ * 	Note:dest must overlap one source register.
+ * cpsr: N,Z,C,V
+ *
+ * carry is unsigned overflow,and V is signed overflow.
+ * For example, for a 8bit 8 MCU,
+ * the signed intergar range is -128-127
+ *	so it'll cause overflow that 127+127 or -128-128
+ */
+uint32_t adc(CORE_REGS &core_regs, uint16_t instruction){
+	if(ADC_R_CON(instruction)){
+		uint16_t rm = BITS(instruction,3,5);
+		uint16_t rdn = BITS(instruction,0,2);
+		uint32_t op1 = core_regs[rm];
+		uint32_t op2 = core_regs[rdn];
+		uint64_t result = (uint64_t )op1 + (uint64_t )op2;
+		uint32_t result32 = (uint32_t)result;
+		core_regs[rdn] = result32;
+		core_regs.updateCpsrNZByResult(result32);
+		core_regs.updateCpsrCarryBit(result & ((uint64_t)1<<32));
+
+		int64_t signed_result= int64_t((int32_t)op1) + int64_t((int32_t)op2);
+
+		core_regs.updateCpsrOverflowBit(
+				  (signed_result > (int64_t)(int32_t)(0x7FFFFFFF)) ||
+				  (signed_result < (int64_t)(int32_t)(0x80000000))
+				  );
+		core_regs.updateCpsrNZByResult(result32);
+		return result32;
 	}else{
 		AbortAssert(1,Int2Hex(instruction));
 		return 0;
